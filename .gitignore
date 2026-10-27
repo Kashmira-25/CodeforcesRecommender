@@ -1,0 +1,10 @@
+
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.git/
+.env
+*.pyc
+
+# Dataset files stay on your computer for now
+Codeforces User–Problem Interaction Dataset for Pe/
