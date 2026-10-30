@@ -1,5 +1,4 @@
-﻿
-from pathlib import Path
+﻿from pathlib import Path
 import ast
 import re
 import time
@@ -25,104 +24,186 @@ SESSION.headers.update({"User-Agent": "CodeforcesProblemCoach/1.0"})
 
 
 # --------------------------------------------------
-# STYLING
+# STYLING + THEME CONTROL
 # --------------------------------------------------
-st.markdown("""
+# A compact, native toggle keeps the interface familiar and accessible.
+spacer_col, theme_col = st.columns([8.5, 1.5])
+with theme_col:
+    dark_mode = st.toggle("Dark theme", value=False, key="dark_theme")
+
+if dark_mode:
+    palette = {
+        "bg": "#111827", "surface": "#182235", "surface_alt": "#202d42",
+        "text": "#e8eef8", "muted": "#a7b5ca", "border": "#31415a",
+        "sidebar": "#151f30", "hero_a": "#16345d", "hero_b": "#245fba",
+        "accent": "#8bb8ff", "tag_bg": "#263d5d", "tag_text": "#c5dcff",
+        "metric_bg": "#182235", "shadow": "rgba(0,0,0,.16)",
+    }
+else:
+    palette = {
+        "bg": "#f5f8ff", "surface": "#ffffff", "surface_alt": "#edf3ff",
+        "text": "#172b4d", "muted": "#64748b", "border": "#dce6f4",
+        "sidebar": "#edf3ff", "hero_a": "#173c75", "hero_b": "#2679ef",
+        "accent": "#2459a8", "tag_bg": "#e9f1ff", "tag_text": "#2459a8",
+        "metric_bg": "#ffffff", "shadow": "rgba(31,83,160,.08)",
+    }
+
+style = """
 <style>
+    :root {
+        color-scheme: __COLOR_SCHEME__;
+    }
     .stApp {
-        background: #f5f8ff;
+        background: __BG__;
+        color: __TEXT__;
     }
     [data-testid="stHeader"] {
-        background: rgba(245,248,255,0.92);
+        background: __BG__;
     }
     [data-testid="stSidebar"] {
-        background: #edf3ff;
-        border-right: 1px solid #dce7fa;
+        background: __SIDEBAR__;
+        border-right: 1px solid __BORDER__;
     }
+    [data-testid="stSidebar"] * { color: __TEXT__; }
     .block-container {
-        padding-top: 1.5rem;
+        padding-top: 1rem;
         padding-bottom: 3rem;
         max-width: 1450px;
     }
+    h1, h2, h3, h4, p, label, [data-testid="stMarkdownContainer"] {
+        color: __TEXT__;
+    }
+    [data-testid="stCaptionContainer"], .mini-note {
+        color: __MUTED__ !important;
+    }
     .hero {
-        background: linear-gradient(120deg, #173c75, #2679ef);
-        color: white;
-        padding: 2rem 2.2rem;
-        border-radius: 22px;
-        margin-bottom: 1.2rem;
-        box-shadow: 0 10px 28px rgba(31,83,160,.14);
+        background: linear-gradient(120deg, __HERO_A__, __HERO_B__);
+        color: #ffffff;
+        padding: 2.15rem 2.25rem;
+        border-radius: 20px;
+        margin: .25rem 0 1.35rem 0;
+        box-shadow: 0 10px 28px __SHADOW__;
+        border: 1px solid rgba(255,255,255,.12);
     }
     .hero h1 {
-        color: white;
-        font-size: 2.45rem;
+        color: #ffffff !important;
+        font-size: clamp(2rem, 3vw, 2.55rem);
         line-height: 1.15;
-        margin: .3rem 0 .7rem 0;
+        letter-spacing: -.035em;
+        margin: .35rem 0 .7rem 0;
     }
     .hero p {
-        color: #e5efff;
-        font-size: 1.05rem;
+        color: #e5efff !important;
+        font-size: 1.02rem;
+        line-height: 1.6;
         margin-bottom: .2rem;
     }
     .eyebrow {
-        color: #c8ddff;
-        font-size: .82rem;
-        font-weight: 700;
-        letter-spacing: 1.5px;
+        color: #c8ddff !important;
+        font-size: .76rem;
+        font-weight: 750;
+        letter-spacing: 1.6px;
         text-transform: uppercase;
     }
     .section-title {
-        color: #193b70;
+        color: __TEXT__;
         font-size: 1.35rem;
         font-weight: 750;
-        margin: 1rem 0 .6rem 0;
+        letter-spacing: -.025em;
+        margin: 1.1rem 0 .65rem 0;
     }
-    .mini-note {
-        color: #64748b;
-        font-size: .9rem;
-    }
-    .problem-card {
-        background: white;
-        border: 1px solid #dfe9fa;
-        border-radius: 15px;
-        padding: 1rem 1.1rem;
+    .mini-note { font-size: .9rem; }
+    .problem-card, .mode-card {
+        background: __SURFACE__;
+        color: __TEXT__;
+        border: 1px solid __BORDER__;
+        border-radius: 16px;
+        padding: 1.05rem 1.15rem;
         margin: .65rem 0;
+        box-shadow: 0 3px 12px __SHADOW__;
+        transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
     }
+    .problem-card:hover, .mode-card:hover {
+        border-color: __ACCENT__;
+        box-shadow: 0 7px 20px __SHADOW__;
+        transform: translateY(-1px);
+    }
+    .mode-card { min-height: 185px; }
+    .mode-card h3 { margin-top: .15rem; }
     .problem-title {
-        color: #173c75;
+        color: __TEXT__;
         font-size: 1.05rem;
         font-weight: 750;
+        line-height: 1.4;
+    }
+    .problem-meta {
+        color: __MUTED__;
+        font-size: .88rem;
+        margin-top: 5px;
+    }
+    .problem-score {
+        color: __ACCENT__;
+        font-size: .9rem;
+        font-weight: 650;
+        margin: 9px 0 4px;
     }
     .tag-pill {
         display: inline-block;
-        background: #e9f1ff;
-        color: #2459a8;
+        background: __TAG_BG__;
+        color: __TAG_TEXT__;
         padding: 4px 9px;
-        border-radius: 20px;
+        border-radius: 7px;
         font-size: .76rem;
-        margin: 4px 4px 2px 0;
-    }
-    .mode-card {
-        background: white;
-        border: 1px solid #dfe9fa;
-        padding: 1rem;
-        border-radius: 16px;
-        height: 100%;
+        font-weight: 600;
+        margin: 5px 4px 1px 0;
     }
     div[data-testid="stMetric"] {
-        background: white;
-        border: 1px solid #dfe9fa;
+        background: __METRIC_BG__;
+        border: 1px solid __BORDER__;
         border-radius: 15px;
         padding: 13px 16px;
+        box-shadow: 0 3px 12px __SHADOW__;
+    }
+    [data-testid="stMetricLabel"] { color: __MUTED__ !important; }
+    [data-testid="stMetricValue"] { color: __TEXT__ !important; }
+    .stButton button {
+        border-radius: 10px;
+        font-weight: 650;
+        transition: all .15s ease;
     }
     .stButton button[kind="primary"] {
         border-radius: 10px;
         font-weight: 700;
     }
-    a {
-        font-weight: 600;
+    div[data-baseweb="select"] > div, div[data-baseweb="input"] > div,
+    div[data-baseweb="textarea"] > div {
+        background: __SURFACE__;
+        border-color: __BORDER__;
+        border-radius: 10px;
+    }
+    a { color: __ACCENT__; font-weight: 650; }
+    [data-testid="stAlert"] { border-radius: 12px; }
+    @media (max-width: 700px) {
+        .block-container { padding-top: .7rem; }
+        .hero { padding: 1.45rem; border-radius: 16px; }
+        .hero h1 { font-size: 1.85rem; }
+        .mode-card { min-height: 0; }
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+replacements = {
+    "__COLOR_SCHEME__": "dark" if dark_mode else "light",
+    "__BG__": palette["bg"], "__TEXT__": palette["text"],
+    "__SIDEBAR__": palette["sidebar"], "__BORDER__": palette["border"],
+    "__HERO_A__": palette["hero_a"], "__HERO_B__": palette["hero_b"],
+    "__SHADOW__": palette["shadow"], "__SURFACE__": palette["surface"],
+    "__MUTED__": palette["muted"], "__ACCENT__": palette["accent"],
+    "__TAG_BG__": palette["tag_bg"], "__TAG_TEXT__": palette["tag_text"],
+    "__METRIC_BG__": palette["metric_bg"],
+}
+for token, value in replacements.items():
+    style = style.replace(token, value)
+st.markdown(style, unsafe_allow_html=True)
 
 
 # --------------------------------------------------
@@ -241,8 +322,6 @@ def load_dataset():
         problems["tag_list"] = problems["tags"].apply(parse_tags)
 
     return interactions, problems
-
-
 def cf_request(method, params):
     try:
         response = SESSION.get(
@@ -385,8 +464,10 @@ def live_topic_weakness(submissions):
 
 
 def render_recommendations(results, limit=10):
-    st.markdown('<div class="section-title">🏆 Recommended problems</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">🏆 Recommended problems</div>',
+        unsafe_allow_html=True,
+    )
     st.caption(
         "Higher ranking scores indicate a better match under this "
         "demo ranking method. Scores are not probabilities."
@@ -426,11 +507,11 @@ def render_recommendations(results, limit=10):
             f"""
             <div class="problem-card">
               <div class="problem-title">{rank}. {name}</div>
-              <div style="color:#64748b;font-size:.88rem;margin-top:4px">
+              <div class="problem-meta">
                 Problem ID: {pid} &nbsp;·&nbsp; Rating: {rating_label}
               </div>
               <div style="margin-top:7px">{tags_html}</div>
-              <div style="margin-top:9px;color:#2459a8;font-size:.9rem">
+              <div class="problem-score">
                 Ranking score: {row["score"]:.3f}
               </div>
               {"<a href='" + link + "' target='_blank'>Open on Codeforces ↗</a>" if link else ""}
@@ -557,14 +638,14 @@ if page == "Home":
     a.markdown("**1. Choose a mode**\n\nUse a dataset sample or your handle.")
     b.markdown("**2. Analyze practice**\n\nReview solved problems and topic patterns.")
     c.markdown("**3. Find your next task**\n\nExplore ranked unsolved problems.")
-
-
 # --------------------------------------------------
 # RECOMMENDATIONS
 # --------------------------------------------------
 elif page == "Recommendations":
-    st.markdown('<div class="section-title">🎯 Your recommendations</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">🎯 Your recommendations</div>',
+        unsafe_allow_html=True,
+    )
 
     mode_default = st.session_state.get("mode", "Demo")
     mode = st.radio(
@@ -653,8 +734,10 @@ elif page == "Recommendations":
         )
         render_recommendations(results, number_to_show)
 
-        st.markdown('<div class="section-title">📚 Topic analysis</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-title">📚 Topic analysis</div>',
+            unsafe_allow_html=True,
+        )
         if weakness:
             topic_df = pd.DataFrame(
                 sorted(weakness.items(), key=lambda x: x[1], reverse=True)[:12],
@@ -776,8 +859,10 @@ elif page == "Recommendations":
 # TOPIC ANALYSIS PAGE
 # --------------------------------------------------
 elif page == "Topic Analysis":
-    st.markdown('<div class="section-title">📚 Explore dataset topics</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">📚 Explore dataset topics</div>',
+        unsafe_allow_html=True,
+    )
     all_tags = [
         tag
         for tags in interactions["tag_list"]
@@ -797,8 +882,10 @@ elif page == "Topic Analysis":
 # ABOUT PAGE
 # --------------------------------------------------
 elif page == "About":
-    st.markdown('<div class="section-title">ℹ️ About this project</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">ℹ️ About this project</div>',
+        unsafe_allow_html=True,
+    )
     st.write(
         "Codeforces Problem Coach is a prototype that helps competitive "
         "programmers discover practice problems from their topic history "
@@ -822,4 +909,4 @@ elif page == "About":
     )
     st.write(
         "- Codeforces availability and API rate limits can affect live mode."
-    )
+    )    
